@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+pydantic
+motor # async MongoDB
+python-multipart
+python-dotenv
+ultralytics>=8.0.0 # for YOLOv8 (inference)
+easyocr
+opencv-python-headless
+Pillow
+sentence-transformers
+faiss-cpu
+openai # if using OpenAI
+httpx
+numpy
+pandas
+dateparser
