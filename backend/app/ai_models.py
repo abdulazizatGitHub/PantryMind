@@ -13,6 +13,7 @@ import io
 import base64
 import logging
 from .config import Config
+from .rag_system import RecipeRAGSystem
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -251,67 +252,128 @@ class ExpiryPredictor:
 
 class RecipeGenerator:
     def __init__(self, openai_api_key: str = None):
-        """Initialize recipe generation model"""
+        """Initialize recipe generation model with RAG system"""
         self.openai_api_key = openai_api_key or Config.OPENAI_API_KEY
         self.model = Config.OPENAI_MODEL
         self.max_tokens = Config.OPENAI_MAX_TOKENS
         self.temperature = Config.OPENAI_TEMPERATURE
         
+        # Initialize RAG system
+        self.rag_system = RecipeRAGSystem()
+        
         if self.openai_api_key:
             openai.api_key = self.openai_api_key
             logger.info("OpenAI API configured for recipe generation")
         else:
-            logger.warning("No OpenAI API key provided. Using fallback recipe templates.")
+            logger.warning("No OpenAI API key provided. Using RAG system with fallback templates.")
     
     def generate_recipes(self, pantry_items: List[str], max_recipes: int = None) -> List[Dict[str, Any]]:
-        """Generate recipes based on available pantry items"""
+        """Generate recipes using RAG system with optional LLM enhancement"""
         max_recipes = max_recipes or Config.MAX_RECIPES
         
-        if not self.openai_api_key:
-            logger.info("Using fallback recipe templates")
-            return self._generate_fallback_recipes(pantry_items, max_recipes)
-        
         try:
-            logger.info(f"Generating {max_recipes} recipes using OpenAI")
-            return self._generate_openai_recipes(pantry_items, max_recipes)
+            # Get expiring items from pantry
+            expiring_items = self._get_expiring_items(pantry_items)
+            
+            # Use RAG system to get recipe suggestions
+            logger.info(f"Generating recipes using RAG system for {len(pantry_items)} items")
+            recipes = self.rag_system.get_recipe_suggestions(
+                pantry_items, 
+                expiring_items, 
+                max_recipes
+            )
+            
+            # Enhance with LLM if available
+            if self.openai_api_key and recipes:
+                logger.info("Enhancing recipes with LLM")
+                recipes = self._enhance_recipes_with_llm(recipes, pantry_items, expiring_items)
+            
+            logger.info(f"Generated {len(recipes)} recipes")
+            return recipes
+            
         except Exception as e:
-            logger.error(f"Error generating recipes with OpenAI: {e}")
-            logger.info("Falling back to template recipes")
+            logger.error(f"Error generating recipes: {e}")
             return self._generate_fallback_recipes(pantry_items, max_recipes)
     
-    def _generate_openai_recipes(self, pantry_items: List[str], max_recipes: int) -> List[Dict[str, Any]]:
-        """Generate recipes using OpenAI API"""
-        prompt = f"""
-        Generate {max_recipes} simple recipes using these ingredients: {', '.join(pantry_items)}
+    def _get_expiring_items(self, pantry_items: List[str]) -> List[str]:
+        """Get items that are expiring soon from pantry"""
+        # This would typically query the database for expiring items
+        # For now, return empty list - this should be implemented in the routes
+        return []
+    
+    def _enhance_recipes_with_llm(self, recipes: List[Dict[str, Any]], 
+                                 pantry_items: List[str], 
+                                 expiring_items: List[str]) -> List[Dict[str, Any]]:
+        """Enhance recipes using OpenAI LLM"""
+        try:
+            enhanced_recipes = []
+            
+            for recipe in recipes:
+                # Create prompt for recipe enhancement
+                prompt = self._create_enhancement_prompt(recipe, pantry_items, expiring_items)
+                
+                response = openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful cooking assistant that enhances recipes based on available ingredients and dietary constraints."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature
+                )
+                
+                # Parse enhanced recipe
+                enhanced_recipe = self._parse_llm_response(response.choices[0].message.content, recipe)
+                enhanced_recipes.append(enhanced_recipe)
+            
+            return enhanced_recipes
+            
+        except Exception as e:
+            logger.error(f"Error enhancing recipes with LLM: {e}")
+            return recipes
+    
+    def _create_enhancement_prompt(self, recipe: Dict[str, Any], 
+                                  pantry_items: List[str], 
+                                  expiring_items: List[str]) -> str:
+        """Create prompt for recipe enhancement"""
+        expiring_text = f"Prioritize using these expiring items: {', '.join(expiring_items)}" if expiring_items else ""
         
-        For each recipe, provide:
-        - Title
-        - List of ingredients (use as many from the provided list as possible)
-        - Step-by-step instructions
-        - Cooking time in minutes
-        - Difficulty level (easy/medium/hard)
+        return f"""
+        Enhance this recipe based on the available pantry items and constraints:
         
-        Format as JSON array with objects containing: title, ingredients[], instructions[], cooking_time, difficulty
+        Original Recipe: {recipe.get('title', '')}
+        Ingredients: {', '.join(recipe.get('ingredients', []))}
+        Instructions: {' '.join(recipe.get('instructions', []))}
+        
+        Available Pantry Items: {', '.join(pantry_items)}
+        {expiring_text}
+        
+        Please enhance the recipe by:
+        1. Adapting ingredients to use available pantry items
+        2. Prioritizing expiring items if any
+        3. Improving instructions for clarity
+        4. Adding cooking tips
+        5. Suggesting substitutions if needed
+        
+        Return the enhanced recipe in JSON format with: title, ingredients[], instructions[], cooking_time, difficulty, tips[]
         """
-        
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful cooking assistant that creates simple, practical recipes."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=self.max_tokens,
-            temperature=self.temperature
-        )
-        
+    
+    def _parse_llm_response(self, response_text: str, original_recipe: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse LLM response and merge with original recipe"""
         try:
             import json
-            recipes_text = response.choices[0].message.content
-            recipes = json.loads(recipes_text)
-            return recipes if isinstance(recipes, list) else [recipes]
+            enhanced_data = json.loads(response_text)
+            
+            # Merge with original recipe
+            enhanced_recipe = original_recipe.copy()
+            enhanced_recipe.update(enhanced_data)
+            enhanced_recipe['source'] = 'rag_enhanced_llm'
+            
+            return enhanced_recipe
+            
         except Exception as e:
-            logger.error(f"Error parsing OpenAI response: {e}")
-            return self._generate_fallback_recipes(pantry_items, max_recipes)
+            logger.error(f"Error parsing LLM response: {e}")
+            return original_recipe
     
     def _generate_fallback_recipes(self, pantry_items: List[str], max_recipes: int) -> List[Dict[str, Any]]:
         """Generate simple fallback recipes"""
@@ -388,7 +450,12 @@ class RecipeGenerator:
             if available_ingredients:
                 recipe = template.copy()
                 recipe["ingredients"] = available_ingredients
+                recipe["source"] = "fallback_template"
                 recipes.append(recipe)
         
         logger.info(f"Generated {len(recipes)} fallback recipes")
         return recipes
+    
+    def get_rag_status(self) -> Dict[str, Any]:
+        """Get RAG system status"""
+        return self.rag_system.get_system_status()

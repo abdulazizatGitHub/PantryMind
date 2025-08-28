@@ -68,6 +68,92 @@ def test_easyocr():
         print(f"❌ EasyOCR test failed: {e}")
         return False
 
+def test_sentence_transformers():
+    """Test Sentence Transformers"""
+    print("🧪 Testing Sentence Transformers...")
+    
+    try:
+        from sentence_transformers import SentenceTransformer
+        from app.config import Config
+        
+        # Load model
+        model = SentenceTransformer(Config.SENTENCE_TRANSFORMER_MODEL)
+        
+        # Test encoding
+        test_texts = ["apple", "banana", "milk", "bread"]
+        start_time = time.time()
+        embeddings = model.encode(test_texts, normalize_embeddings=True)
+        end_time = time.time()
+        
+        print(f"✅ Sentence Transformers test passed in {end_time - start_time:.2f}s")
+        print(f"   Embedding shape: {embeddings.shape}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Sentence Transformers test failed: {e}")
+        return False
+
+def test_faiss():
+    """Test FAISS vector search"""
+    print("🧪 Testing FAISS...")
+    
+    try:
+        import faiss
+        
+        # Create test index
+        dimension = 384  # all-MiniLM-L6-v2 dimension
+        index = faiss.IndexFlatIP(dimension)
+        
+        # Create test vectors
+        test_vectors = np.random.random((10, dimension)).astype('float32')
+        faiss.normalize_L2(test_vectors)  # Normalize for cosine similarity
+        
+        # Add to index
+        index.add(test_vectors)
+        
+        # Test search
+        query = np.random.random((1, dimension)).astype('float32')
+        faiss.normalize_L2(query)
+        
+        start_time = time.time()
+        scores, indices = index.search(query, 3)
+        end_time = time.time()
+        
+        print(f"✅ FAISS test passed in {end_time - start_time:.2f}s")
+        return True
+        
+    except Exception as e:
+        print(f"❌ FAISS test failed: {e}")
+        return False
+
+def test_rag_system():
+    """Test RAG system"""
+    print("🧪 Testing RAG System...")
+    
+    try:
+        from app.rag_system import RecipeRAGSystem
+        
+        # Initialize RAG system
+        rag_system = RecipeRAGSystem()
+        
+        # Test recipe search
+        test_items = ["apple", "banana", "milk"]
+        start_time = time.time()
+        recipes = rag_system.search_recipes(test_items, max_recipes=2)
+        end_time = time.time()
+        
+        print(f"✅ RAG System test passed in {end_time - start_time:.2f}s")
+        print(f"   Found {len(recipes)} recipes")
+        
+        # Test system status
+        status = rag_system.get_system_status()
+        print(f"   RAG Status: {status}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ RAG System test failed: {e}")
+        return False
+
 def test_openai():
     """Test OpenAI API"""
     print("🧪 Testing OpenAI API...")
@@ -108,6 +194,10 @@ def test_ai_models_integration():
         recipe_generator = RecipeGenerator()
         
         print("✅ AI models integration test passed")
+        
+        # Test RAG status
+        rag_status = recipe_generator.get_rag_status()
+        print(f"   RAG Status: {rag_status}")
         return True
         
     except Exception as e:
@@ -125,6 +215,7 @@ def test_configuration():
         assert Config.MONGO_URI, "MongoDB URI not configured"
         assert Config.SECRET_KEY, "Secret key not configured"
         assert Config.YOLO_MODEL_PATH, "YOLO model path not configured"
+        assert Config.SENTENCE_TRANSFORMER_MODEL, "Sentence transformer model not configured"
         
         print("✅ Configuration test passed")
         return True
@@ -142,6 +233,9 @@ def main():
         ("Configuration", test_configuration),
         ("YOLOv8 Model", test_yolo_model),
         ("EasyOCR Model", test_easyocr),
+        ("Sentence Transformers", test_sentence_transformers),
+        ("FAISS", test_faiss),
+        ("RAG System", test_rag_system),
         ("OpenAI API", test_openai),
         ("AI Models Integration", test_ai_models_integration),
     ]

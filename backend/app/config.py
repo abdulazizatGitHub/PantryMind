@@ -4,6 +4,8 @@ from datetime import timedelta
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/food_waste_reducer'
+    MONGO_USERNAME = os.environ.get('MONGO_USERNAME')
+    MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     UPLOAD_FOLDER = 'uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
@@ -17,12 +19,22 @@ class Config:
     EASYOCR_LANGUAGES = os.environ.get('EASYOCR_LANGUAGES', 'en').split(',')
     EASYOCR_GPU = os.environ.get('EASYOCR_GPU', 'False').lower() == 'true'
     
+    # Sentence Transformers for RAG
+    SENTENCE_TRANSFORMER_MODEL = os.environ.get('SENTENCE_TRANSFORMER_MODEL', 'all-MiniLM-L6-v2')
+    FAISS_INDEX_PATH = os.environ.get('FAISS_INDEX_PATH', 'data/faiss/recipe_index.faiss')
+    RECIPE_DATASET_PATH = os.environ.get('RECIPE_DATASET_PATH', 'data/recipes/recipenlg_sample20k.csv')
+    
+    # RAG Configuration
+    RAG_TOP_K = int(os.environ.get('RAG_TOP_K', '5'))
+    RAG_SIMILARITY_THRESHOLD = float(os.environ.get('RAG_SIMILARITY_THRESHOLD', '0.3'))
+    RAG_ENABLE = os.environ.get('RAG_ENABLE', 'True').lower() == 'true'
+    
     # Recipe generation settings
     MAX_RECIPES = int(os.environ.get('MAX_RECIPES', '3'))
     RECIPE_TIMEOUT = int(os.environ.get('RECIPE_TIMEOUT', '30'))  # seconds
     OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-3.5-turbo')
     OPENAI_MAX_TOKENS = int(os.environ.get('OPENAI_MAX_TOKENS', '1000'))
-    OPENAI_TEMPERATURE = float(os.environ.get('OPENAI_TEMPERATURE', '0.7'))
+    OPENAI_TEMPERATURE = float(os.environ.get('OPENAI_TEMPERATURE', '0.3'))  # Lower for more consistent output
     
     # Expiry prediction settings
     EXPIRY_WARNING_DAYS = int(os.environ.get('EXPIRY_WARNING_DAYS', '7'))
@@ -35,3 +47,9 @@ class Config:
     # Development settings
     DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     TESTING = os.environ.get('TESTING', 'False').lower() == 'true'
+    
+    # Data directories
+    DATA_DIR = os.environ.get('DATA_DIR', 'data')
+    RECIPES_DIR = os.path.join(DATA_DIR, 'recipes')
+    FAISS_DIR = os.path.join(DATA_DIR, 'faiss')
+    MODELS_DIR = os.environ.get('MODELS_DIR', 'models')

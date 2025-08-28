@@ -89,16 +89,76 @@ def setup_easyocr():
         print(f"❌ Error setting up EasyOCR: {e}")
         return False
 
+def setup_sentence_transformers():
+    """Set up Sentence Transformers for RAG"""
+    print_step(5, "Setting up Sentence Transformers")
+    
+    try:
+        from sentence_transformers import SentenceTransformer
+        model_name = os.environ.get('SENTENCE_TRANSFORMER_MODEL', 'all-MiniLM-L6-v2')
+        
+        print(f"📥 Loading sentence transformer model: {model_name}")
+        model = SentenceTransformer(model_name)
+        print("✅ Sentence Transformers initialized successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Error setting up Sentence Transformers: {e}")
+        return False
+
+def setup_faiss():
+    """Set up FAISS for vector search"""
+    print_step(6, "Setting up FAISS")
+    
+    try:
+        import faiss
+        print("✅ FAISS is available")
+        
+        # Test FAISS functionality
+        print("🧪 Testing FAISS functionality...")
+        dimension = 384  # all-MiniLM-L6-v2 dimension
+        index = faiss.IndexFlatIP(dimension)
+        print("✅ FAISS initialized successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Error setting up FAISS: {e}")
+        return False
+
+def setup_rag_system():
+    """Set up RAG system"""
+    print_step(7, "Setting up RAG system")
+    
+    try:
+        # Create data directories
+        data_dir = os.environ.get('DATA_DIR', 'data')
+        recipes_dir = os.path.join(data_dir, 'recipes')
+        faiss_dir = os.path.join(data_dir, 'faiss')
+        
+        os.makedirs(recipes_dir, exist_ok=True)
+        os.makedirs(faiss_dir, exist_ok=True)
+        
+        print(f"✅ Created data directories: {data_dir}")
+        
+        # Test RAG system initialization
+        print("🧪 Testing RAG system initialization...")
+        from app.rag_system import RecipeRAGSystem
+        rag_system = RecipeRAGSystem()
+        status = rag_system.get_system_status()
+        print(f"✅ RAG system status: {status}")
+        return True
+    except Exception as e:
+        print(f"❌ Error setting up RAG system: {e}")
+        return False
+
 def setup_openai():
     """Set up OpenAI configuration"""
-    print_step(5, "Setting up OpenAI configuration")
+    print_step(8, "Setting up OpenAI configuration")
     
     api_key = os.environ.get('OPENAI_API_KEY')
     
     if not api_key:
         print("⚠️  No OpenAI API key found")
-        print("   The application will use fallback recipe templates")
-        print("   To enable AI recipe generation, set OPENAI_API_KEY environment variable")
+        print("   The application will use RAG system with fallback templates")
+        print("   To enable LLM recipe enhancement, set OPENAI_API_KEY environment variable")
         return True
     
     try:
@@ -112,12 +172,12 @@ def setup_openai():
         return True
     except Exception as e:
         print(f"❌ Error connecting to OpenAI API: {e}")
-        print("   The application will use fallback recipe templates")
+        print("   The application will use RAG system with fallback templates")
         return True
 
 def create_upload_directory():
     """Create upload directory for images"""
-    print_step(6, "Creating upload directory")
+    print_step(9, "Creating upload directory")
     
     upload_folder = os.environ.get('UPLOAD_FOLDER', 'uploads')
     
@@ -131,7 +191,7 @@ def create_upload_directory():
 
 def test_models():
     """Test all models"""
-    print_step(7, "Testing AI models")
+    print_step(10, "Testing AI models")
     
     try:
         # Test YOLO
@@ -146,6 +206,26 @@ def test_models():
         import easyocr
         reader = easyocr.Reader(['en'], gpu=False)
         print("✅ EasyOCR test passed")
+        
+        # Test Sentence Transformers
+        print("🧪 Testing Sentence Transformers...")
+        from sentence_transformers import SentenceTransformer
+        model_name = os.environ.get('SENTENCE_TRANSFORMER_MODEL', 'all-MiniLM-L6-v2')
+        st_model = SentenceTransformer(model_name)
+        print("✅ Sentence Transformers test passed")
+        
+        # Test FAISS
+        print("🧪 Testing FAISS...")
+        import faiss
+        dimension = 384
+        index = faiss.IndexFlatIP(dimension)
+        print("✅ FAISS test passed")
+        
+        # Test RAG System
+        print("🧪 Testing RAG System...")
+        from app.rag_system import RecipeRAGSystem
+        rag_system = RecipeRAGSystem()
+        print("✅ RAG System test passed")
         
         # Test OpenAI (if available)
         if os.environ.get('OPENAI_API_KEY'):
@@ -163,7 +243,7 @@ def test_models():
 
 def create_env_file():
     """Create .env file if it doesn't exist"""
-    print_step(8, "Setting up environment configuration")
+    print_step(11, "Setting up environment configuration")
     
     env_file = Path('.env')
     env_example = Path('env.example')
@@ -193,7 +273,7 @@ def main():
     print("\nPrerequisites:")
     print("- Python 3.8+")
     print("- Internet connection (for downloading models)")
-    print("- OpenAI API key (optional, for enhanced recipe generation)")
+    print("- OpenAI API key (optional, for LLM recipe enhancement)")
     
     # Check if running in the correct directory
     if not os.path.exists('requirements.txt'):
@@ -205,6 +285,9 @@ def main():
         install_dependencies,
         setup_yolo_model,
         setup_easyocr,
+        setup_sentence_transformers,
+        setup_faiss,
+        setup_rag_system,
         setup_openai,
         create_upload_directory,
         test_models,
@@ -236,6 +319,11 @@ def main():
         print("2. Start MongoDB (if running locally)")
         print("3. Run the Flask application: python run.py")
         print("4. Start the frontend: npm run dev (from frontend directory)")
+        print("\nFeatures available:")
+        print("- YOLOv8: Food item detection")
+        print("- EasyOCR: Expiry date extraction")
+        print("- RAG System: Recipe retrieval with sentence transformers + FAISS")
+        print("- OpenAI: LLM recipe enhancement (if API key provided)")
         return True
 
 if __name__ == "__main__":

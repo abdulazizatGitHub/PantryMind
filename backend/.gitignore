@@ -1,2 +1,4 @@
-./env.example
 venv/
+data/
+env.example
+.env
