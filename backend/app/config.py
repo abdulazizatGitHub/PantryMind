@@ -11,17 +11,24 @@ class Config:
     UPLOAD_FOLDER = 'uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     
+    # GPU Configuration
+    USE_GPU = os.environ.get('USE_GPU', 'True').lower() == 'true'
+    CUDA_DEVICE = os.environ.get('CUDA_DEVICE', '0')  # GPU device ID
+    FORCE_CPU = os.environ.get('FORCE_CPU', 'False').lower() == 'true'  # Force CPU if needed
+    
     # AI Model paths and configuration
     YOLO_MODEL_PATH = os.environ.get('YOLO_MODEL_PATH') or 'yolov8n.pt'
     YOLO_CONFIDENCE_THRESHOLD = float(os.environ.get('YOLO_CONFIDENCE_THRESHOLD', '0.3'))
     YOLO_IMAGE_SIZE = int(os.environ.get('YOLO_IMAGE_SIZE', '640'))
+    YOLO_DEVICE = os.environ.get('YOLO_DEVICE', '0' if USE_GPU and not FORCE_CPU else 'cpu')
     
     # EasyOCR configuration
     EASYOCR_LANGUAGES = os.environ.get('EASYOCR_LANGUAGES', 'en').split(',')
-    EASYOCR_GPU = os.environ.get('EASYOCR_GPU', 'False').lower() == 'true'
+    EASYOCR_GPU = os.environ.get('EASYOCR_GPU', 'True' if USE_GPU and not FORCE_CPU else 'False').lower() == 'true'
     
     # Sentence Transformers for RAG
     SENTENCE_TRANSFORMER_MODEL = os.environ.get('SENTENCE_TRANSFORMER_MODEL', 'all-MiniLM-L6-v2')
+    SENTENCE_TRANSFORMER_DEVICE = os.environ.get('SENTENCE_TRANSFORMER_DEVICE', 'cuda' if USE_GPU and not FORCE_CPU else 'cpu')
     FAISS_INDEX_PATH = os.environ.get('FAISS_INDEX_PATH', 'data/faiss/recipe_index.faiss')
     RECIPE_DATASET_PATH = os.environ.get('RECIPE_DATASET_PATH', 'data/faiss/recipes_metadata.pkl')
     

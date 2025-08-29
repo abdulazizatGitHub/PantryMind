@@ -4,7 +4,7 @@ import numpy as np
 from app.config import Config
 
 
-# load model once
+# load model once with GPU device configuration
 model = YOLO(Config.YOLO_MODEL_PATH)
 
 
@@ -15,7 +15,7 @@ def run_yolo_on_image_bytes(image_bytes: bytes, conf_thresh=0.3):
     # image_bytes: raw bytes from upload
     nparr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    results = model.predict(img, conf=conf_thresh, imgsz=640)
+    results = model.predict(img, conf=conf_thresh, imgsz=Config.YOLO_IMAGE_SIZE, device=Config.YOLO_DEVICE)
     # results is a list; take first
     out = []
     r = results[0]

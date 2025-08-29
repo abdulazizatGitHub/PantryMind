@@ -72,11 +72,12 @@ class FoodDetectionModel:
                 logger.error("Failed to decode image")
                 return []
             
-            # Run detection
+            # Run detection with GPU device configuration
             results = self.model.predict(
                 img, 
                 conf=confidence_threshold, 
                 imgsz=self.image_size,
+                device=Config.YOLO_DEVICE,
                 verbose=False
             )
             

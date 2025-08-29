@@ -31,7 +31,7 @@ class RecipeRAGSystem:
         try:
             # Initialize sentence transformer
             logger.info(f"Loading sentence transformer model: {Config.SENTENCE_TRANSFORMER_MODEL}")
-            self.sentence_transformer = SentenceTransformer(Config.SENTENCE_TRANSFORMER_MODEL)
+            self.sentence_transformer = SentenceTransformer(Config.SENTENCE_TRANSFORMER_MODEL, device=Config.SENTENCE_TRANSFORMER_DEVICE)
             
             # Load or create FAISS index
             self._load_or_create_faiss_index()

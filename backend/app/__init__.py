@@ -14,7 +14,7 @@ def create_app(config_class=Config):
     mongo.init_app(app)
     
     # Register blueprints
-    from .routes import main, pantry, recipes, detection
+    from .routers import main, pantry, recipes, detection
     app.register_blueprint(main.bp)
     app.register_blueprint(pantry.bp, url_prefix='/api/pantry')
     app.register_blueprint(recipes.bp, url_prefix='/api/recipes')

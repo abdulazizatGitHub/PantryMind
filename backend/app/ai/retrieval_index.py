@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import pandas as pd
 import numpy as np
+from app.config import Config
 
 
 EMBED_MODEL = 'all-MiniLM-L6-v2'
@@ -14,7 +15,7 @@ def build_index(recipes_csv_path: str, out_index_path: str, out_meta_path: str, 
     if sample_n and len(df)>sample_n:
         df = df.sample(sample_n, random_state=42)
     texts = (df['title'].fillna('') + ' ' + df['ingredients'].fillna('') + ' ' + df['instructions'].fillna('')).tolist()
-    model = SentenceTransformer(EMBED_MODEL)
+    model = SentenceTransformer(EMBED_MODEL, device=Config.SENTENCE_TRANSFORMER_DEVICE)
     emb = model.encode(texts, show_progress_bar=True, normalize_embeddings=True)
     dim = emb.shape[1]
     index = faiss.IndexFlatIP(dim)

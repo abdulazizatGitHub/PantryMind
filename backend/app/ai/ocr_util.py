@@ -3,9 +3,11 @@ import re
 import dateparser
 from io import BytesIO
 from PIL import Image
+import numpy as np
+from app.config import Config
 
 
-reader = easyocr.Reader(['en'], gpu=False)
+reader = easyocr.Reader(['en'], gpu=Config.EASYOCR_GPU)
 
 
 DATE_PATTERNS = [

@@ -3,6 +3,5 @@ data/
 data/detect_ingredients-1
 data/runs
 yolo11n.pt
-yolov8n.pt
 yolov8s.pt
 .env
