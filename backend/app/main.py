@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import detect, ocr, pantry, recipes
-from .config import settings
+from .config import Config
 
 
 app = FastAPI(title='FoodWaste API')
-app.add_middleware(CORSMiddleware, allow_origins=settings.ALLOWED_HOSTS or ["*"], allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
 
 
 app.include_router(detect.router, prefix='/api')

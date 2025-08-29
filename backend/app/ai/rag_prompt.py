@@ -1,9 +1,9 @@
 import openai
-from .config import settings
-from .retrieval_index import search # local function you will implement
+from app.config import Config
+from .retrieval_index import build_index # local function you will implement
 
 
-openai.api_key = settings.OPENAI_API_KEY
+openai.api_key = Config.OPENAI_API_KEY
 
 
 SYSTEM_INSTRUCTIONS = "You are a careful cooking assistant. Use the provided base recipe and pantry items. You must not invent ingredients that aren't commonly substituted. Use short concise steps. Output JSON."

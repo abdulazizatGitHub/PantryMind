@@ -1,11 +1,11 @@
 from ultralytics import YOLO
 import cv2
 import numpy as np
-from .config import settings
+from app.config import Config
 
 
 # load model once
-model = YOLO(settings.YOLO_MODEL_PATH)
+model = YOLO(Config.YOLO_MODEL_PATH)
 
 
 # map some YOLO class ids/names to pantry-friendly labels if needed

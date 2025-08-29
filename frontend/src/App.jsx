@@ -1,56 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
-import Pantry from './components/Pantry';
-import RecipeGenerator from './components/RecipeGenerator';
 import Scanner from './components/Scanner';
+import RecipeView from './components/RecipeView';
 import Navigation from './components/Navigation';
 import './App.css';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [pantryItems, setPantryItems] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({});
+  const [generatedRecipes, setGeneratedRecipes] = useState([]);
 
   useEffect(() => {
-    fetchPantryItems();
     fetchDashboardStats();
   }, []);
 
-  const fetchPantryItems = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/pantry/items');
-      const data = await response.json();
-      setPantryItems(data.items || []);
-    } catch (error) {
-      console.error('Error fetching pantry items:', error);
-    }
-  };
-
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/dashboard');
-      const data = await response.json();
-      setDashboardStats(data);
+      const response = await fetch('http://localhost:8000/api/analytics/waste-reduction');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardStats(data);
+      }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
   };
 
-  const handleItemAdded = () => {
-    fetchPantryItems();
-    fetchDashboardStats();
+  const handleRecipeSelect = (recipes) => {
+    setGeneratedRecipes(recipes);
+    setActiveTab('recipes');
+  };
+
+  const handleAnalyticsUpdate = async (analyticsData) => {
+    // Update dashboard stats with new analytics data from recipe generation
+    if (analyticsData) {
+      setDashboardStats(prevStats => ({
+        ...prevStats,
+        ...analyticsData
+      }));
+    }
+    
+    // Also refresh from server to get the latest aggregated data
+    await fetchDashboardStats();
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard stats={dashboardStats} onRefresh={fetchDashboardStats} />;
-      case 'pantry':
-        return <Pantry items={pantryItems} onItemAdded={handleItemAdded} />;
       case 'scanner':
-        return <Scanner onItemAdded={handleItemAdded} />;
+        return <Scanner onRecipeSelect={handleRecipeSelect} onAnalyticsUpdate={handleAnalyticsUpdate} />;
       case 'recipes':
-        return <RecipeGenerator pantryItems={pantryItems} onItemAdded={handleItemAdded} />;
+        return <RecipeView recipes={generatedRecipes} onBack={() => setActiveTab('scanner')} />;
       default:
         return <Dashboard stats={dashboardStats} onRefresh={fetchDashboardStats} />;
     }
@@ -61,10 +66,10 @@ function App() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
           <h1 className="text-4xl font-bold text-center text-gray-900 mb-8">
-            🍽️ AI Food Waste Reducer
+            🍽️ PantryMind AI
           </h1>
           
-          <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
           
           <main className="mt-8">
             {renderContent()}

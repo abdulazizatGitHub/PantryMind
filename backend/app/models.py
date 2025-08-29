@@ -1,21 +1,21 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
 from bson import ObjectId
 
-class PantryItem:
-    def __init__(self, name: str, quantity: float = 1.0, unit: str = "unit", 
-                 expiry_date: Optional[date] = None, image_url: Optional[str] = None,
-                 confidence: Optional[float] = None, category: Optional[str] = None,
-                 created_at: Optional[datetime] = None, updated_at: Optional[datetime] = None):
-        self.name = name
-        self.quantity = quantity
-        self.unit = unit
-        self.expiry_date = expiry_date
-        self.image_url = image_url
-        self.confidence = confidence
-        self.category = category
-        self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
+class PantryItem(BaseModel):
+    name: str
+    quantity: float = 1.0
+    unit: str = "unit"
+    expiry_date: Optional[date] = None
+    image_url: Optional[str] = None
+    confidence: Optional[float] = None
+    category: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -26,8 +26,8 @@ class PantryItem:
             'image_url': self.image_url,
             'confidence': self.confidence,
             'category': self.category,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
+            'created_at': self.created_at or datetime.now(timezone.utc),
+            'updated_at': self.updated_at or datetime.now(timezone.utc)
         }
     
     @classmethod
@@ -51,20 +51,19 @@ class PantryItem:
             updated_at=data.get('updated_at')
         )
 
-class Recipe:
-    def __init__(self, title: str, ingredients: List[str], instructions: List[str],
-                 cooking_time: int, difficulty: str = "medium", cuisine: str = "general",
-                 tags: Optional[List[str]] = None, image_url: Optional[str] = None,
-                 created_at: Optional[datetime] = None):
-        self.title = title
-        self.ingredients = ingredients
-        self.instructions = instructions
-        self.cooking_time = cooking_time
-        self.difficulty = difficulty
-        self.cuisine = cuisine
-        self.tags = tags or []
-        self.image_url = image_url
-        self.created_at = created_at or datetime.utcnow()
+class Recipe(BaseModel):
+    title: str
+    ingredients: List[str]
+    instructions: List[str]
+    cooking_time: int
+    difficulty: str = "medium"
+    cuisine: str = "general"
+    tags: Optional[List[str]] = []
+    image_url: Optional[str] = None
+    created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -76,7 +75,7 @@ class Recipe:
             'cuisine': self.cuisine,
             'tags': self.tags,
             'image_url': self.image_url,
-            'created_at': self.created_at
+            'created_at': self.created_at or datetime.now(timezone.utc)
         }
     
     @classmethod
@@ -93,14 +92,15 @@ class Recipe:
             created_at=data.get('created_at')
         )
 
-class UserInteraction:
-    def __init__(self, action: str, item_id: Optional[str] = None, recipe_id: Optional[str] = None,
-                 metadata: Optional[Dict[str, Any]] = None, created_at: Optional[datetime] = None):
-        self.action = action  # 'scan_item', 'add_item', 'view_recipe', 'waste_reduced'
-        self.item_id = item_id
-        self.recipe_id = recipe_id
-        self.metadata = metadata or {}
-        self.created_at = created_at or datetime.utcnow()
+class UserInteraction(BaseModel):
+    action: str  # 'scan_item', 'add_item', 'view_recipe', 'waste_reduced'
+    item_id: Optional[str] = None
+    recipe_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = {}
+    created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -108,5 +108,5 @@ class UserInteraction:
             'item_id': self.item_id,
             'recipe_id': self.recipe_id,
             'metadata': self.metadata,
-            'created_at': self.created_at
+            'created_at': self.created_at or datetime.now(timezone.utc)
         }

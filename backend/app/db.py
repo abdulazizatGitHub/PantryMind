@@ -1,9 +1,9 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from .config import settings
+from app.config import Config
 
 
-client = AsyncIOMotorClient(settings.MONGODB_URI)
-db = client[settings.MONGO_DB_NAME]
+client = AsyncIOMotorClient(Config.MONGO_URI)
+db = client[Config.MONGO_DB_NAME]
 
 
 # Collections: users, pantry_items, events, recipes_cache
